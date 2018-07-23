@@ -1,0 +1,15 @@
+body {
+    color:#fff;
+    background:#003580;
+    font-size:15px
+}
+h1 {
+    color:#000;
+    background:#e9f0fa;
+    text-align:center;
+    font-weight:bold;
+    font-size:20px;
+    padding:14px;
+    position:relative;
+    min-height:20px
+}
