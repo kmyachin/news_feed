@@ -17,7 +17,7 @@ class News:
 class LightNewsClient:
     def __init__(self):
         self.user_id = randint(1,10)
-        self.filename = '../data/news.csv'
+        self.filename = './data/news.csv'
         self.news = []
 
     def load_feed(self):
