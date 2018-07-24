@@ -50,12 +50,15 @@ def create_app():
     from db import db
     db.init_app(app)
 
+    from . import auth
+    app.register_blueprint(auth.bp)
+
     @app.route("/")
     def random_news():
         return client.news[randint(0,client.news_count-1)].title
 
     @app.route("/news/")
-    def render():
+    def news():
         if 'already_view' not in session:
             session['already_view']=[]
             session.modified=True
@@ -67,10 +70,5 @@ def create_app():
         session['already_view'].append(id)
         session.modified=True
         return render_template("main.html", title=unicode(client.news[id].title, "utf8"), text=unicode(client.news[id].text, "utf8"))
-
-    @app.route("/logout")
-    def logout():
-        session.pop('already_view', None)
-        return 'logout done'
 
     return app
