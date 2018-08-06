@@ -1,7 +1,9 @@
+# encoding: utf-8
+
 from random import randint
 import os
 from flask import Flask
-from flask import render_template, session
+from flask import current_app, render_template, session
 
 class News:
     def __init__(self, id, user_id, ts, title, text):
@@ -16,26 +18,45 @@ class News:
 
 class LightNewsClient:
     def __init__(self):
-        self.user_id = randint(1,10)
-        self.filename = './data/news.csv'
-        self.news = []
+        #self.user_id = randint(1,10)
+        self.news_count = 0
 
-    def load_feed(self):
-        with open(self.filename, 'r') as newsfeed:
+    def load_from_file(self):
+        from db import db
+        db = db.get_db()
+        with open(current_app.config['FILENAME'], 'r') as newsfeed:
             for line in newsfeed:
                 args = line.split(';')
                 if len(args) == 5:
-                    self.news.append(News(args[0], args[1], args[2], args[3], args[4]))
+                    #self.news.append(News(args[0], args[1], args[2], args[3], args[4]))
+                    db.execute(
+                        'INSERT INTO news (title, text) VALUES (?, ?)', (unicode(args[3], "utf-8"), unicode(args[4], "utf-8"))
+                    )
+                    self.news_count += 1
+        db.commit()
+
+    def get_news(self):
+        from db import db
+        db = db.get_db()
+        if len(session['already_view']) > 0:
+            where_str = " WHERE id not in (" + ",".join(session['already_view']) + ")"
+        else:
+            where_str = ""
+
+        return db.execute(
+                    "SELECT id, title, text FROM news" +  where_str + " limit 1"
+                ).fetchone()
 
     @property
-    def news_count(self):
-        return len(self.news)
+    def count(self):
+        return self.news_count
 
 def create_app():
     app = Flask(__name__)
     app.config.from_mapping(
             SECRET_KEY=b'_5#y2L"F4Q8z\n\xec]/',
-            DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite')
+            DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
+            FILENAME='./data/news.csv'
     )
 
     # ensure the instance folder exists
@@ -44,11 +65,12 @@ def create_app():
     except OSError:
         pass
 
-    client = LightNewsClient()
-    client.load_feed()
-
     from db import db
     db.init_app(app)
+
+    with app.app_context():
+        client = LightNewsClient()
+        client.load_from_file()
 
     from . import auth, comments
     app.register_blueprint(auth.bp)
@@ -57,20 +79,18 @@ def create_app():
 
     @app.route("/")
     def random_news():
-        return client.news[randint(0,client.news_count-1)].title
+        return client.news[randint(0,client.count-1)].title
 
     @app.route("/news/")
     def news():
-        if 'already_view' not in session:
+        if 'already_view' not in session \
+                or len(session['already_view']) == client.count:
             session['already_view']=[]
-            session.modified=True
-        id = randint(0,client.news_count-1)
-        if len(session['already_view']) == client.news_count:
-            return "No more news"
-        while id in session['already_view']:
-            id = randint(0,client.news_count-1)
-        session['already_view'].append(id)
-        session.modified=True
-        return render_template("main.html", title=unicode(client.news[id].title, "utf8"), text=unicode(client.news[id].text, "utf8"))
+
+        news = client.get_news()
+
+        session['already_view'].append(str(news['id']))
+        session.modified = True
+        return render_template("main.html", title=news['title'], text=news['text'])
 
     return app
