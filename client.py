@@ -50,8 +50,10 @@ def create_app():
     from db import db
     db.init_app(app)
 
-    from . import auth
+    from . import auth, comments
     app.register_blueprint(auth.bp)
+    app.register_blueprint(comments.bp)
+
 
     @app.route("/")
     def random_news():

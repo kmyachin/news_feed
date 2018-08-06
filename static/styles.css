@@ -1,15 +1,30 @@
 body {
     color:#fff;
     background:#003580;
-    font-size:15px
+    font-size:23px
 }
 h1 {
     color:#000;
     background:#e9f0fa;
     text-align:center;
     font-weight:bold;
-    font-size:20px;
+    font-size:27px;
     padding:14px;
     position:relative;
     min-height:20px
+}
+
+a.button {
+    -webkit-appearance: button;
+    -moz-appearance: button;
+    appearance: button;
+    text-decoration: none;
+    padding:5px 25px;
+    cursor:pointer;
+    border-radius:6px;
+    line-height:34px;
+    font-size:23px;
+    border:0;
+    color:#fff;
+    background-color:#07c
 }
